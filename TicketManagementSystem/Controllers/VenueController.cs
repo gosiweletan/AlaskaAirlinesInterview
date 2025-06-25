@@ -19,13 +19,13 @@ namespace TicketManagementSystem.Controllers
 
         [HttpGet(Name = "GetVenue")]
 		[Route("{id}")]
-		public Venue GetById(Guid id)
+		public Venue GetById([FromRoute] Guid id)
         {
             return _operations.GetVenue(id);
         }
 
         [HttpPost(Name = "CreateVenue")]
-        public Venue Create(Venue newVenue) {
+        public Venue Create([FromBody] Venue newVenue) {
             return _operations.CreateVenue(newVenue);
         }
 

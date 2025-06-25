@@ -20,5 +20,13 @@ namespace TicketManagementSystem {
 		public Event? GetEvent(Guid id) {
 			return _dataAccess.GetEvent(id);
 		}
+
+		public Event UpdateEvent(Event updatedEvent) {
+			return _dataAccess.UpdateEvent(updatedEvent);
+		}
+
+		public TicketType CreateTicketType(Guid id, TicketType ticketType) {
+			return _dataAccess.CreateTicketType(id, ticketType);
+		}
 	}
 }

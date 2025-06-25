@@ -1,6 +1,6 @@
 @TicketManagementSystem_HostAddress = http://localhost:5149
 
-GET {{TicketManagementSystem_HostAddress}}/weatherforecast/
+GET {{TicketManagementSystem_HostAddress}}/venues/{id}
 Accept: application/json
 
 ###
