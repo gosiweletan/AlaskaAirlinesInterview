@@ -12,5 +12,13 @@ namespace TicketManagementSystem {
 		public Venue GetVenue(Guid id) {
 			return _dataAccess.GetVenue(id);
 		}
+
+		public Event CreateEvent(Event newEvent) {
+			return _dataAccess.AddEvent(newEvent);
+		}
+
+		public Event? GetEvent(Guid id) {
+			return _dataAccess.GetEvent(id);
+		}
 	}
 }

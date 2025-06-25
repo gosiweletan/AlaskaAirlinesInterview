@@ -4,7 +4,7 @@
 
 		public required string Name { get; set; }
 
-		public string[] Seats { get; set; }
+		public required string[] Seats { get; set; }
 
 		public override bool Equals(object? obj) {
 			if (obj is Venue otherVenue) {

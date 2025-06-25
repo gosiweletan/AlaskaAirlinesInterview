@@ -1,9 +1,9 @@
 ﻿using TicketManagementSystem;
 using TicketManagementSystem.Models;
 
-namespace TicketManagentTests {
+namespace TicketManagementTests {
 	[TestClass]
-	public sealed class VenuesTests {
+	public sealed class VenueTests {
 		private readonly Operations _operations = new();
 
 		[TestMethod]
