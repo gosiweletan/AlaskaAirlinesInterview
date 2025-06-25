@@ -8,7 +8,7 @@
 		public DateTime EventEnd { get; set; }
 		public DateTime ForSaleStart { get; set; }
 		public DateTime ForSaleEnd { get; set; }
-
 		public Guid[]? TicketTypeIds { get; set; }
+		public Guid[]? TicketIds { get; set; }
 	}
 }

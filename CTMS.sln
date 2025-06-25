@@ -5,7 +5,7 @@ VisualStudioVersion = 17.13.35931.197 d17.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TicketManagementSystem", "TicketManagementSystem\TicketManagementSystem.csproj", "{847A7EE4-03E7-4F28-903B-D7D039207826}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TicketManagentTests", "TicketManagentTests\TicketManagentTests.csproj", "{EAF79D60-5259-4878-ABFF-A884242A2870}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TicketManagementTests", "TicketManagementTests\TicketManagementTests.csproj", "{EAF79D60-5259-4878-ABFF-A884242A2870}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
