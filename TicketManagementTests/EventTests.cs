@@ -58,9 +58,8 @@ namespace TicketManagementTests {
 			var createdTicketType2 = _operations.CreateTicketType(createdEvent.Id, ticketTypeB);
 			Assert.AreEqual(ticketTypeB.Name, createdTicketType2.Name);
 
-			var retrievedEvent = _operations.GetEvent(createdEvent.Id);
-			Assert.IsTrue(retrievedEvent.TicketTypeIds.Contains(createdTicketType1.Id));
-			Assert.IsTrue(retrievedEvent.TicketTypeIds.Contains(createdTicketType2.Id));
+			var allTicketTypes = _operations.GetEventTicketTypes(createdEvent.Id);
+			Assert.AreEqual(2, allTicketTypes.Count());
 
 			var retrievedTicketType = _operations.GetEventTicketType(createdEvent.Id, createdTicketType1.Id);
 			Assert.AreEqual(createdTicketType1, retrievedTicketType);
@@ -69,13 +68,14 @@ namespace TicketManagementTests {
 		[TestMethod]
 		public void TicketTypeUpdate() {
 			var createdEvent = CreateEvent(addTicketType: true);
+			var createdTicketType = _operations.GetEventTicketTypes(createdEvent.Id).First();
 			var updatedTicketType = new TicketType {
-				Id = createdEvent.TicketTypeIds.First(),
+				Id = createdTicketType.Id,
 				Name = "VIP - Updated",
 				Price = 120.00m,
 				Seats = ["A1", "A2", "B1"]
 			};
-			var updatedResult = _operations.UpdateTicketType(createdEvent.Id, updatedTicketType);
+			var updatedResult = _operations.UpdateTicketType(createdEvent.Id, createdTicketType.Id, updatedTicketType);
 			Assert.AreEqual(updatedTicketType, updatedResult);
 		}
 	}

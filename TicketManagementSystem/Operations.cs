@@ -5,6 +5,9 @@ namespace TicketManagementSystem {
 	public class Operations {
 		private readonly DataAccess _dataAccess = new();
 
+		public int DefaultPageSize { get; set; } = 10;
+
+
 		public Venue CreateVenue(Venue newVenue) {
 			return _dataAccess.CreateVenue(newVenue);
 		}
@@ -25,20 +28,25 @@ namespace TicketManagementSystem {
 			return _dataAccess.UpdateEvent(updatedEvent);
 		}
 
-		public TicketType CreateTicketType(Guid id, TicketType ticketType) {
-			return _dataAccess.CreateTicketType(id, ticketType);
+		public TicketType CreateTicketType(Guid eventId, TicketType ticketType) {
+			return _dataAccess.CreateTicketType(eventId, ticketType);
 		}
 
-		public TicketType UpdateTicketType(Guid eventId, TicketType updatedTicketType) {
+		public TicketType UpdateTicketType(Guid eventId, Guid ticketTypeId, TicketType updatedTicketType) {
+			updatedTicketType.Id = ticketTypeId;
 			return _dataAccess.UpdateTicketType(eventId, updatedTicketType);
 		}
 
-		public IEnumerable<Ticket> GetEventTickets(Guid id) {
-			return _dataAccess.GetEventTickets(id);
+		public IEnumerable<Ticket> GetEventTickets(Guid eventId) {
+			return _dataAccess.GetEventTickets(eventId, 1, DefaultPageSize);
 		}
 
 		public TicketType GetEventTicketType(Guid eventId, Guid ticketTypeId) {
 			return _dataAccess.GetEventTicketType(eventId, ticketTypeId);
+		}
+
+		public IEnumerable<TicketType> GetEventTicketTypes(Guid eventId) {
+			return _dataAccess.GetEventTicketTypes(eventId);
 		}
 	}
 }
