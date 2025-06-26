@@ -24,7 +24,8 @@ namespace TicketManagementSystem {
 			return _dataAccess.GetEvent(id);
 		}
 
-		public Event UpdateEvent(Event updatedEvent) {
+		public Event UpdateEvent(Guid eventId, Event updatedEvent) {
+			updatedEvent.Id = eventId;
 			return _dataAccess.UpdateEvent(updatedEvent);
 		}
 
@@ -41,12 +42,40 @@ namespace TicketManagementSystem {
 			return _dataAccess.GetEventTickets(eventId, 1, DefaultPageSize);
 		}
 
-		public TicketType GetEventTicketType(Guid eventId, Guid ticketTypeId) {
-			return _dataAccess.GetEventTicketType(eventId, ticketTypeId);
+		public Ticket GetEventTicket(Guid eventId, Guid ticketId) {
+			return _dataAccess.GetEventTicket(eventId, ticketId);
+		}
+
+		public Ticket GetTicket(Guid ticketId) {
+			return _dataAccess.GetTicket(ticketId);
 		}
 
 		public IEnumerable<TicketType> GetEventTicketTypes(Guid eventId) {
 			return _dataAccess.GetEventTicketTypes(eventId);
+		}
+
+		public TicketType GetEventTicketType(Guid eventId, Guid ticketTypeId) {
+			return _dataAccess.GetEventTicketType(eventId, ticketTypeId);
+		}
+
+		public TicketReservation CreateTicketReservation(Guid ticketId, TicketReservation ticketReservation) {
+			return _dataAccess.ReserveTicket(ticketId, ticketReservation);
+		}
+
+		public TicketReservation? GetTicketReservation(Guid ticketId, Guid userId) {
+			return _dataAccess.GetTicketReservation(ticketId, userId);
+		}
+
+		public void DeleteTicketReservation(Guid ticketId, Guid userId) {
+			_dataAccess.DeleteTicketReservation(ticketId, userId);
+		}
+
+		public TicketPurchase CreateTicketPurchase(Guid ticketId, Guid userId, string purchaseToken, decimal purchasePrice) {
+			return _dataAccess.CreateTicketPurchase(ticketId, userId, purchaseToken, purchasePrice);
+		}
+
+		public TicketPurchase? GetTicketPurchase(Guid ticketId) {
+			return _dataAccess.GetTicketPurchase(ticketId);
 		}
 	}
 }

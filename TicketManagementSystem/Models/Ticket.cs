@@ -10,7 +10,7 @@ namespace TicketManagementSystem.Models {
 		public TicketStatus Status {
 			get {
 				if (PurchaseToken != null) {
-					return TicketStatus.Sold;
+					return TicketStatus.Purchased;
 				}
 				else if (ReservedUntil.HasValue && ReservedUntil > DateTime.UtcNow) {
 					return TicketStatus.Reserved;
@@ -28,7 +28,7 @@ namespace TicketManagementSystem.Models {
 		public enum TicketStatus {
 			Available,
 			Reserved,
-			Sold
+			Purchased
 		}
 
 		public override bool Equals(object? obj) {

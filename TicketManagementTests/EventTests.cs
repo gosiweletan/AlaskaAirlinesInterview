@@ -37,7 +37,7 @@ namespace TicketManagementTests {
 				ForSaleEnd = DateTime.UtcNow.AddDays(12),
 				Description = "A concert by Singalot outside Everett"
 			};
-			var updatedResult = _operations.UpdateEvent(updatedEvent);
+			var updatedResult = _operations.UpdateEvent(createdEvent.Id, updatedEvent);
 			Assert.AreEqual(updatedEvent, updatedResult);
 			var retrievedEvent = _operations.GetEvent(createdEvent.Id);
 			Assert.AreEqual(updatedResult, retrievedEvent);

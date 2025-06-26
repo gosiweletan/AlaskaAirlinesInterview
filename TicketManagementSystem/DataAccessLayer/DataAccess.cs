@@ -66,7 +66,7 @@ namespace TicketManagementSystem.DataAccessLayer {
 				throw new InvalidOperationException("Cannot update seats for ticket type because tickets are already being sold.");
 			}
 
-			// While it is less efficient to remove and recreate all tickets, this happens rarely and the code is much simpler to maintain.
+			// While it is less efficient to remove and recreate all tickets, this happens rarely and the code is cheaper to maintain.
 			foreach (var ticket in ticketsForType) {
 				Tickets[eventId].Remove(ticket.Id);
 			}
@@ -128,6 +128,121 @@ namespace TicketManagementSystem.DataAccessLayer {
 
 		internal IEnumerable<TicketType> GetEventTicketTypes(Guid eventId) {
 			return TicketTypes.ContainsKey(eventId) ? TicketTypes[eventId].Values : [];
+		}
+
+		internal Ticket GetEventTicket(Guid eventId, Guid ticketId) {
+			if (!Tickets.TryGetValue(eventId, out Dictionary<Guid, Ticket>? eventTickets)) {
+				throw new InvalidOperationException($"Event id {eventId} not found.");
+			}
+
+			if (!eventTickets.TryGetValue(ticketId, out Ticket? ticket)) {
+				throw new InvalidOperationException($"Ticket id {ticketId} not found for event id {eventId}.");
+			}
+
+			return ticket;
+		}
+
+		internal Ticket GetTicket(Guid ticketId) {
+			var ticket = Tickets.Values.SelectMany(t => t.Values).FirstOrDefault(t => t.Id == ticketId);
+			if (ticket == null) {
+				throw new InvalidOperationException($"Ticket id {ticketId} not found.");
+			}
+
+			return ticket;
+		}
+
+		internal TicketReservation ReserveTicket(Guid ticketId, TicketReservation ticketReservation) {
+			if (ticketReservation.UserId == Guid.Empty) {
+				throw new ArgumentException("UserId is required.", nameof(ticketReservation));
+			}
+
+			var ticket = GetTicket(ticketId);
+			if (ticket.Status != Ticket.TicketStatus.Available) {
+				throw new InvalidOperationException($"Ticket id {ticketId} is not available for reservation because its status is already {ticket.Status}.");
+			}
+
+			ticket.Owner = ticketReservation.UserId;
+			ticket.ReservedUntil = DateTime.UtcNow.AddMinutes(10);
+			ticketReservation.ReservedUntil = ticket.ReservedUntil.Value;
+			ticketReservation.Id = ticketReservation.UserId;
+			return ticketReservation;
+		}
+
+		/// <summary>
+		/// Ensures that a ticket is not reserved for a user.
+		/// Idempotent. Will have no effect if the ticket is not reserved or has been reserved by a different user.
+		/// </summary>
+		internal void DeleteTicketReservation(Guid ticketId, Guid userId) {
+			var ticket = GetTicket(ticketId);
+			if (ticket.Status == Ticket.TicketStatus.Reserved && ticket.Owner == userId) {
+				// note: do not delete the owner to avoid a race condition where the ticket gets purchased as the cancellation call is being executed
+				ticket.ReservedUntil = null;
+			}
+		}
+
+		internal TicketReservation? GetTicketReservation(Guid ticketId, Guid userId) {
+			var ticket = GetTicket(ticketId);
+			if (ticket.Status != Ticket.TicketStatus.Reserved || ticket.Owner != userId) {
+				// No reservation found.
+				return null;
+			}
+
+			return new TicketReservation {
+				Id = userId,
+				UserId = userId,
+				ReservedUntil = ticket.ReservedUntil.Value
+			};
+		}
+
+		internal TicketPurchase CreateTicketPurchase(Guid ticketId, Guid purchaser, string purchaseToken, decimal purchasePrice) {
+			var ticket = GetTicket(ticketId);
+
+			// If the user has already purchased the ticket, behave idempotently. Deliberately ignoring the purchase token and price since the important fact is that the ticket is purchased.
+			if (ticket.Status == Ticket.TicketStatus.Purchased && ticket.Owner == purchaser) {
+				return new TicketPurchase {
+					UserId = purchaser,
+					PurchaseToken = ticket.PurchaseToken,
+					PurchasePrice = ticket.PurchasePrice.Value
+				};
+			}
+
+			if (ticket.Status == Ticket.TicketStatus.Purchased) {
+				throw new InvalidOperationException($"Ticket id {ticketId} is not available for purchase because it has already been purchased by someone else.");
+			}
+
+			if (ticket.Status == Ticket.TicketStatus.Reserved && ticket.Owner != purchaser) {
+				throw new InvalidOperationException($"Ticket id {ticketId} is reserved by another user and cannot be purchased.");
+			}
+
+			var ticketType = TicketTypes[ticket.EventId][ticket.TicketTypeId];
+			if (purchasePrice != ticketType.Price) {
+				throw new InvalidOperationException($"Ticket id {ticketId} cannot be purchased for {purchasePrice:C} because the actual price is {ticketType.Price:C}.");
+			}
+
+			// TODO: Use payment processing system to process the payment.
+
+			ticket.PurchaseToken = purchaseToken;
+			ticket.PurchasePrice = purchasePrice;
+
+			return new TicketPurchase {
+				UserId = purchaser,
+				PurchaseToken = purchaseToken,
+				PurchasePrice = purchasePrice
+			};
+		}
+
+		internal TicketPurchase? GetTicketPurchase(Guid ticketId) {
+			var ticket = GetTicket(ticketId);
+			if (ticket.Status != Ticket.TicketStatus.Purchased) {
+				// No purchase found.
+				return null;
+			}
+
+			return new TicketPurchase {
+				UserId = ticket.Owner.Value,
+				PurchaseToken = ticket.PurchaseToken,
+				PurchasePrice = ticket.PurchasePrice.Value
+			};
 		}
 	}
 }
