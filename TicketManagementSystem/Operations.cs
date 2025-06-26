@@ -14,7 +14,7 @@ namespace TicketManagementSystem {
 		}
 
 		public Event CreateEvent(Event newEvent) {
-			return _dataAccess.AddEvent(newEvent);
+			return _dataAccess.CreateEvent(newEvent);
 		}
 
 		public Event? GetEvent(Guid id) {
@@ -27,6 +27,18 @@ namespace TicketManagementSystem {
 
 		public TicketType CreateTicketType(Guid id, TicketType ticketType) {
 			return _dataAccess.CreateTicketType(id, ticketType);
+		}
+
+		public TicketType UpdateTicketType(Guid eventId, TicketType updatedTicketType) {
+			return _dataAccess.UpdateTicketType(eventId, updatedTicketType);
+		}
+
+		public IEnumerable<Ticket> GetEventTickets(Guid id) {
+			return _dataAccess.GetEventTickets(id);
+		}
+
+		public TicketType GetEventTicketType(Guid eventId, Guid ticketTypeId) {
+			return _dataAccess.GetEventTicketType(eventId, ticketTypeId);
 		}
 	}
 }
