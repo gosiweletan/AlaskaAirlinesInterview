@@ -39,12 +39,12 @@ namespace TicketManagementSystem.IntegrationTests
         }
 
         // Helper method to create a venue and return its ID
-        private async Task<Guid> CreateVenueAsync()
+        private async Task<Guid> CreateVenueAsync(string[] seats)
         {
             var venue = new Venue
             {
                 Name = "Test Venue",
-                Seats = new[] { "A1", "A2", "A3" }
+                Seats = seats
             };
             var venueJson = JsonSerializer.Serialize(venue, _jsonOptions);
             var venueContent = new StringContent(venueJson, Encoding.UTF8, "application/json");
@@ -58,7 +58,7 @@ namespace TicketManagementSystem.IntegrationTests
         public async Task CreateEvent_WithValidEvent_ReturnsCreated()
         {
             // Arrange
-            var venueId = await CreateVenueAsync();
+            var venueId = await CreateVenueAsync(new[] { "A1", "A2", "A3" });
             var newEvent = new Event
             {
                 Name = "Test Concert",
@@ -87,7 +87,7 @@ namespace TicketManagementSystem.IntegrationTests
         {
             // Arrange
             // Create an event with invalid data (e.g., end time before start time)
-            var venueId = await CreateVenueAsync();
+            var venueId = await CreateVenueAsync(new[] { "A1", "A2", "A3" });
             var invalidEvent = new Event
             {
                 Name = "Invalid Event",
@@ -127,7 +127,7 @@ namespace TicketManagementSystem.IntegrationTests
         public async Task GetEvent_WithValidId_ReturnsEvent()
         {
             // Arrange
-            var venueId = await CreateVenueAsync();
+            var venueId = await CreateVenueAsync(new[] { "A1", "A2", "A3" });
             var newEvent = new Event
             {
                 Name = "Get Test Event",
@@ -197,7 +197,7 @@ namespace TicketManagementSystem.IntegrationTests
         public async Task UpdateEvent_WithValidData_ReturnsUpdatedEvent()
         {
             // Arrange
-            var venueId = await CreateVenueAsync();
+            var venueId = await CreateVenueAsync(new[] { "A1", "A2", "A3" });
             var originalEvent = new Event
             {
                 Name = "Original Event",
@@ -321,7 +321,7 @@ namespace TicketManagementSystem.IntegrationTests
         public async Task CreateTicketType_WithValidData_ReturnsCreated()
         {
             // Arrange
-            var venueId = await CreateVenueAsync();
+            var venueId = await CreateVenueAsync(new[] { "A1", "A2", "A3", "A4" });
             var newEvent = new Event
             {
                 Name = "Event for Ticket Types",
@@ -346,7 +346,7 @@ namespace TicketManagementSystem.IntegrationTests
             {
                 Name = "VIP Ticket",
                 Price = 150.00m,
-                Seats = ["A1", "A2", "A3"]
+                Seats = new[] { "A1", "A2", "A3", "A4" }
             };
 
             var json = JsonSerializer.Serialize(newTicketType, _jsonOptions);
@@ -370,7 +370,7 @@ namespace TicketManagementSystem.IntegrationTests
             {
                 Name = "VIP Ticket",
                 Price = 150.00m,
-                Seats = ["A1", "A2", "A3"]
+                Seats = new[] { "A1", "A2", "A3", "A4" }
             };
 
             var json = JsonSerializer.Serialize(newTicketType, _jsonOptions);
@@ -387,7 +387,7 @@ namespace TicketManagementSystem.IntegrationTests
         public async Task GetTicketTypes_WithValidEventId_ReturnsTicketTypes()
         {
             // Arrange
-            var venueId = await CreateVenueAsync();
+            var venueId = await CreateVenueAsync(new[] { "A1", "A2", "A3", "A4" });
             var newEvent = new Event
             {
                 Name = "Event for Ticket Types",
@@ -413,7 +413,7 @@ namespace TicketManagementSystem.IntegrationTests
             {
                 Name = "VIP Ticket",
                 Price = 150.00m,
-                Seats = ["A1", "A2", "A3"]
+                Seats = new[] { "A1", "A2", "A3", "A4" }
             };
 
             var createTicketTypeJson = JsonSerializer.Serialize(newTicketType, _jsonOptions);
@@ -450,7 +450,7 @@ namespace TicketManagementSystem.IntegrationTests
         public async Task GetTicketType_WithValidIds_ReturnsTicketType()
         {
             // Arrange
-            var venueId = await CreateVenueAsync();
+            var venueId = await CreateVenueAsync(new[] { "A1", "A2", "A3", "A4" });
             var newEvent = new Event
             {
                 Name = "Event for Ticket Type",
@@ -476,7 +476,7 @@ namespace TicketManagementSystem.IntegrationTests
             {
                 Name = "VIP Ticket",
                 Price = 150.00m,
-                Seats = ["A1", "A2", "A3"]
+                Seats = new[] { "A1", "A2", "A3", "A4" }
             };
 
             var createTicketTypeJson = JsonSerializer.Serialize(newTicketType, _jsonOptions);
@@ -519,7 +519,7 @@ namespace TicketManagementSystem.IntegrationTests
         public async Task UpdateTicketType_WithValidData_ReturnsUpdatedTicketType()
         {
             // Arrange
-            var venueId = await CreateVenueAsync();
+            var venueId = await CreateVenueAsync(new[] { "A1", "A2", "A3", "A4", "A5" });
             var newEvent = new Event
             {
                 Name = "Event for Ticket Type Update",
@@ -545,7 +545,7 @@ namespace TicketManagementSystem.IntegrationTests
             {
                 Name = "VIP Ticket",
                 Price = 150.00m,
-                Seats = ["A1", "A2", "A3"]
+                Seats = new[] { "A1", "A2", "A3", "A4" }
             };
 
             var createTicketTypeJson = JsonSerializer.Serialize(originalTicketType, _jsonOptions);
@@ -561,7 +561,7 @@ namespace TicketManagementSystem.IntegrationTests
             {
                 Name = "Premium VIP Ticket",
                 Price = 200.00m,
-                Seats = ["A1", "A2", "A3", "A4"]
+                Seats = new[] { "A1", "A2", "A3", "A4", "A5" }
             };
 
             var updateJson = JsonSerializer.Serialize(updatedTicketType, _jsonOptions);
@@ -592,7 +592,7 @@ namespace TicketManagementSystem.IntegrationTests
             {
                 Name = "Premium VIP Ticket",
                 Price = 200.00m,
-                Seats = ["A1", "A2", "A3", "A4"]
+                Seats = new[] { "A1", "A2", "A3", "A4", "A5" }
             };
 
             var updateJson = JsonSerializer.Serialize(updatedTicketType, _jsonOptions);
@@ -609,7 +609,7 @@ namespace TicketManagementSystem.IntegrationTests
         public async Task GetEventTickets_WithValidEventId_ReturnsTickets()
         {
             // Arrange
-            var venueId = await CreateVenueAsync();
+            var venueId = await CreateVenueAsync(new[] { "A1", "A2", "A3", "A4" });
             var newEvent = new Event
             {
                 Name = "Event for Tickets",
@@ -659,7 +659,7 @@ namespace TicketManagementSystem.IntegrationTests
         public async Task GetEventTickets_Paging_WorksCorrectly()
         {
             // Arrange
-            var venueId = await CreateVenueAsync();
+            var venueId = await CreateVenueAsync(Enumerable.Range(1, 10).Select(i => $"A{i}").ToArray());
             var newEvent = new Event
             {
                 Name = "Paging Test Event",
@@ -719,7 +719,7 @@ namespace TicketManagementSystem.IntegrationTests
         public async Task GetEventTickets_FilterByStatus_AvailableOnly()
         {
             // Arrange
-            var venueId = await CreateVenueAsync();
+            var venueId = await CreateVenueAsync(Enumerable.Range(1, 6).Select(i => $"A{i}").ToArray());
             var newEvent = new Event
             {
                 Name = "Status Filter Event",
@@ -798,7 +798,7 @@ namespace TicketManagementSystem.IntegrationTests
         public async Task EndToEnd_EventLifecycle_WorksCorrectly()
         {
             // Arrange
-            var venueId = await CreateVenueAsync();
+            var venueId = await CreateVenueAsync(new[] { "A1", "A2", "A3", "A4" });
             var originalEvent = new Event
             {
                 Name = "End-to-End Test Event",

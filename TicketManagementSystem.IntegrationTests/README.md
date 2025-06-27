@@ -1,3 +1,5 @@
+### This project was created by Cursor. It is the only part of this solution created by AI. It has not been cleaned up.
+
 # EventsController Integration Tests
 
 This project contains comprehensive integration tests for the `EventsController` and `VenuesController` in the Ticket Management System.

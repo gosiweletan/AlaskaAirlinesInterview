@@ -50,7 +50,7 @@ namespace TicketManagementSystem.DataAccessLayer {
 		}
 
 		internal Venue? UpdateVenue(Venue updatedVenue) {
-			if(!Venues.ContainsKey(updatedVenue.Id)) {
+			if (!Venues.ContainsKey(updatedVenue.Id)) {
 				return null;
 			}
 
@@ -141,7 +141,13 @@ namespace TicketManagementSystem.DataAccessLayer {
 		}
 
 		private void CreateEventTicketsForSeats(Guid eventId, TicketType newTicketType) {
+			var availableSeats = Venues[Events[eventId].VenueId].Seats;
 			foreach (var seat in newTicketType.Seats) {
+				// TODO: Needs testing before release.
+				if (!availableSeats.Contains(seat)) {
+					throw new InvalidOperationException($"Seat {seat} is not available in the venue for event id {eventId}.");
+				}
+
 				var ticketId = Guid.NewGuid();
 				Tickets[eventId].Add(
 					ticketId,
@@ -175,7 +181,7 @@ namespace TicketManagementSystem.DataAccessLayer {
 				return []; // No tickets for this event.
 			}
 
-			var tickets = ticketStatus == TicketStatus.Unknown 
+			var tickets = ticketStatus == TicketStatus.Unknown
 				? Tickets[eventId].Values
 				: Tickets[eventId].Values.Where(ticket => ticket.Status == ticketStatus);
 			var totalTickets = tickets.Count();
