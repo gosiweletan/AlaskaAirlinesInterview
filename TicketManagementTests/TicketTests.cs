@@ -58,7 +58,7 @@ namespace TicketManagementTests {
 			var ticket = _operations.GetEventTickets(_testEvent.Id).First();
 			var ticketPurchase = _operations.CreateTicketPurchase(ticket.Id, Guid.NewGuid(), Guid.NewGuid().ToString(), 100.00m);
 			var purchasedTicket = _operations.GetEventTicket(_testEvent.Id, ticket.Id);
-			Assert.AreEqual(Ticket.TicketStatus.Purchased, purchasedTicket.Status, "The ticket status should be 'Purchased' after a successful purchase.");
+			Assert.AreEqual(TicketStatus.Purchased, purchasedTicket.Status, "The ticket status should be 'Purchased' after a successful purchase.");
 			var retrievedPurchase = _operations.GetTicket(purchasedTicket.Id);
 			Assert.AreEqual(ticketPurchase.PurchaseToken, retrievedPurchase.PurchaseToken, "The purchase token should match the one used during the purchase.");
 		}

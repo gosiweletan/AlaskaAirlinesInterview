@@ -25,12 +25,6 @@ namespace TicketManagementSystem.Models {
 		public string? PurchaseToken { get; set; }
 		public decimal? PurchasePrice { get; set; }
 
-		public enum TicketStatus {
-			Available,
-			Reserved,
-			Purchased
-		}
-
 		public override bool Equals(object? obj) {
 			if (obj is Ticket otherTicket) {
 				return EventId == otherTicket.EventId && Seat == otherTicket.Seat;
@@ -43,4 +37,9 @@ namespace TicketManagementSystem.Models {
 		}
 	}
 
+	public enum TicketStatus {
+		Available,
+		Reserved,
+		Purchased
+	}
 }

@@ -62,7 +62,7 @@ namespace TicketManagementSystem.DataAccessLayer {
 			}
 
 			var ticketsForType = Tickets[eventId].Values.Where(ticket => ticket.TicketTypeId == updatedTicketType.Id).ToList();
-			if (!updatedTicketType.Seats.SequenceEqual(ticketsForType.Select(t => t.Seat)) && ticketsForType.Any(ticket => ticket.Status != Ticket.TicketStatus.Available)) {
+			if (!updatedTicketType.Seats.SequenceEqual(ticketsForType.Select(t => t.Seat)) && ticketsForType.Any(ticket => ticket.Status != TicketStatus.Available)) {
 				throw new InvalidOperationException("Cannot update seats for ticket type because tickets are already being sold.");
 			}
 
@@ -157,7 +157,7 @@ namespace TicketManagementSystem.DataAccessLayer {
 			}
 
 			var ticket = GetTicket(ticketId);
-			if (ticket.Status != Ticket.TicketStatus.Available) {
+			if (ticket.Status != TicketStatus.Available) {
 				throw new InvalidOperationException($"Ticket id {ticketId} is not available for reservation because its status is already {ticket.Status}.");
 			}
 
@@ -174,7 +174,7 @@ namespace TicketManagementSystem.DataAccessLayer {
 		/// </summary>
 		internal void DeleteTicketReservation(Guid ticketId, Guid userId) {
 			var ticket = GetTicket(ticketId);
-			if (ticket.Status == Ticket.TicketStatus.Reserved && ticket.Owner == userId) {
+			if (ticket.Status == TicketStatus.Reserved && ticket.Owner == userId) {
 				// note: do not delete the owner to avoid a race condition where the ticket gets purchased as the cancellation call is being executed
 				ticket.ReservedUntil = null;
 			}
@@ -182,7 +182,7 @@ namespace TicketManagementSystem.DataAccessLayer {
 
 		internal TicketReservation? GetTicketReservation(Guid ticketId, Guid userId) {
 			var ticket = GetTicket(ticketId);
-			if (ticket.Status != Ticket.TicketStatus.Reserved || ticket.Owner != userId) {
+			if (ticket.Status != TicketStatus.Reserved || ticket.Owner != userId) {
 				// No reservation found.
 				return null;
 			}
@@ -198,7 +198,7 @@ namespace TicketManagementSystem.DataAccessLayer {
 			var ticket = GetTicket(ticketId);
 
 			// If the user has already purchased the ticket, behave idempotently. Deliberately ignoring the purchase token and price since the important fact is that the ticket is purchased.
-			if (ticket.Status == Ticket.TicketStatus.Purchased && ticket.Owner == purchaser) {
+			if (ticket.Status == TicketStatus.Purchased && ticket.Owner == purchaser) {
 				return new TicketPurchase {
 					UserId = purchaser,
 					PurchaseToken = ticket.PurchaseToken,
@@ -206,11 +206,11 @@ namespace TicketManagementSystem.DataAccessLayer {
 				};
 			}
 
-			if (ticket.Status == Ticket.TicketStatus.Purchased) {
+			if (ticket.Status == TicketStatus.Purchased) {
 				throw new InvalidOperationException($"Ticket id {ticketId} is not available for purchase because it has already been purchased by someone else.");
 			}
 
-			if (ticket.Status == Ticket.TicketStatus.Reserved && ticket.Owner != purchaser) {
+			if (ticket.Status == TicketStatus.Reserved && ticket.Owner != purchaser) {
 				throw new InvalidOperationException($"Ticket id {ticketId} is reserved by another user and cannot be purchased.");
 			}
 
@@ -233,7 +233,7 @@ namespace TicketManagementSystem.DataAccessLayer {
 
 		internal TicketPurchase? GetTicketPurchase(Guid ticketId) {
 			var ticket = GetTicket(ticketId);
-			if (ticket.Status != Ticket.TicketStatus.Purchased) {
+			if (ticket.Status != TicketStatus.Purchased) {
 				// No purchase found.
 				return null;
 			}
