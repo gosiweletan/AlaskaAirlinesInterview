@@ -1,5 +1,6 @@
 ﻿using TicketManagementSystem.Models;
 using TicketManagementSystem.DataAccessLayer;
+using System.Numerics;
 
 namespace TicketManagementSystem {
 	public class Operations {
@@ -38,8 +39,8 @@ namespace TicketManagementSystem {
 			return _dataAccess.UpdateTicketType(eventId, updatedTicketType);
 		}
 
-		public IEnumerable<Ticket> GetEventTickets(Guid eventId) {
-			return _dataAccess.GetEventTickets(eventId, 1, DefaultPageSize);
+		public IEnumerable<Ticket> GetEventTickets(Guid eventId, int pageNum, int pageSize) {
+			return _dataAccess.GetEventTickets(eventId, pageNum == default ? 1 : pageNum, pageSize == default ? DefaultPageSize : pageSize);
 		}
 
 		public Ticket GetEventTicket(Guid eventId, Guid ticketId) {

@@ -20,7 +20,8 @@ namespace TicketManagementSystem.Controllers
         [HttpPost]
         public IActionResult CreateVenue([FromBody] Venue newVenue) {
             try {
-                return Created("/venues/" + newVenue.Id, _operations.CreateVenue(newVenue));
+                var createdVenue = _operations.CreateVenue(newVenue);
+                return Created("/venues/" + createdVenue.Id, createdVenue);
             }
             catch (Exception ex) {
                 return BadRequest("Failed to create venue: " + ex.Message);

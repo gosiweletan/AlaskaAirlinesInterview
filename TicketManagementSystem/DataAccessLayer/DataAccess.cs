@@ -32,6 +32,10 @@ namespace TicketManagementSystem.DataAccessLayer {
 		}
 
 		internal Event UpdateEvent(Event updatedEvent) {
+			if (!Events.ContainsKey(updatedEvent.Id)) {
+				throw new InvalidOperationException($"Event with ID {updatedEvent.Id} not found.");
+			}
+
 			Events[updatedEvent.Id] = updatedEvent;
 			return updatedEvent;
 		}

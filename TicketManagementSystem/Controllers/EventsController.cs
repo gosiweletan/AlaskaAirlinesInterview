@@ -20,7 +20,8 @@ namespace TicketManagementSystem.Controllers
 		[HttpPost]
 		public IActionResult CreateEvent([FromBody] Event newEvent) {
 			try {
-				return Created("/events/" + newEvent.Id, _operations.CreateEvent(newEvent));
+				var createdEvent = _operations.CreateEvent(newEvent);
+				return Created($"/events/{createdEvent.Id}", createdEvent);
 			} 
 			catch (Exception ex) {
 				return BadRequest("Failed to create event: " + ex.Message);
@@ -52,6 +53,74 @@ namespace TicketManagementSystem.Controllers
 			}
 			catch (Exception ex) {
 				return BadRequest("Failed to update event: " + ex.Message);
+			}
+		}
+
+		[HttpPost]
+		[Route("{eventId}/tickettypes")]
+		public IActionResult CreateTicketType([FromRoute] Guid eventId, [FromBody] TicketType newTicketType) {
+			try {
+				var createdTicketType = _operations.CreateTicketType(eventId, newTicketType);
+				return Created($"/events/{eventId}/tickettypes/{createdTicketType.Id}", createdTicketType);
+			}
+			catch (Exception ex) {
+				return BadRequest("Failed to create ticket type: " + ex.Message);
+			}
+		}
+
+		[HttpGet]
+		[Route("{eventId}/tickettypes")]
+		public IActionResult GetTicketTypes([FromRoute] Guid eventId) {
+			try {
+				var ticketTypes = _operations.GetEventTicketTypes(eventId);
+				if (ticketTypes == null || !ticketTypes.Any()) {
+					return NotFound($"No ticket types found for event {eventId}.");
+				}
+
+				return Ok(ticketTypes);
+			}
+			catch (Exception ex) {
+				return BadRequest("Failed to retrieve ticket types: " + ex.Message);
+			}
+		}
+
+		[HttpGet]
+		[Route("{eventId}/tickettypes/{ticketTypeId}")]
+		public IActionResult GetTicketType([FromRoute] Guid eventId, [FromRoute] Guid ticketTypeId) {
+			try {
+				var ticketType = _operations.GetEventTicketType(eventId, ticketTypeId);
+				if (ticketType == null) {
+					return NotFound($"Ticket type with ID {ticketTypeId} for event {eventId} not found.");
+				}
+
+				return Ok(ticketType);
+			}
+			catch (Exception ex) {
+				return BadRequest("Failed to retrieve ticket type: " + ex.Message);
+			}
+		}
+
+		[HttpPut]
+		[Route("{eventId}/tickettypes/{ticketTypeId}")]
+		public IActionResult UpdateTicketType([FromRoute] Guid eventId, [FromRoute] Guid ticketTypeId, [FromBody] TicketType updatedTicketType) {
+			try {
+				var updated = _operations.UpdateTicketType(eventId, ticketTypeId, updatedTicketType);
+				return Ok(updated);
+			}
+			catch (Exception ex) {
+				return BadRequest("Failed to update ticket type: " + ex.Message);
+			}
+		}
+
+		[HttpGet]
+		[Route("{eventId}/tickets")]
+		public IActionResult GetEventTickets([FromRoute] Guid eventId, [FromQuery] int page, [FromQuery] int pageSize) {
+			try {
+				var tickets = _operations.GetEventTickets(eventId, page, pageSize);
+				return Ok(tickets);
+			}
+			catch (Exception ex) {
+				return BadRequest("Failed to retrieve tickets: " + ex.Message);
 			}
 		}
 	}
