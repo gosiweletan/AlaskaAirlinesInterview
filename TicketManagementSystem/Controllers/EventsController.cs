@@ -29,6 +29,17 @@ namespace TicketManagementSystem.Controllers
 		}
 
 		[HttpGet]
+		public IActionResult GetEvents([FromQuery] int page, [FromQuery] int pageSize) {
+			try {
+				var events = _operations.GetEvents(page, pageSize);
+				return Ok(events);
+			}
+			catch (Exception ex) {
+				return BadRequest("Failed to retrieve events: " + ex.Message);
+			}
+		}
+
+		[HttpGet]
 		[Route("{eventId}")]
 		public IActionResult GetEvent([FromRoute] Guid eventId) {
 			try {
@@ -114,9 +125,9 @@ namespace TicketManagementSystem.Controllers
 
 		[HttpGet]
 		[Route("{eventId}/tickets")]
-		public IActionResult GetEventTickets([FromRoute] Guid eventId, [FromQuery] int page, [FromQuery] int pageSize) {
+		public IActionResult GetEventTickets([FromRoute] Guid eventId, [FromQuery] int page, [FromQuery] int pageSize, [FromQuery] TicketStatus ticketStatus) {
 			try {
-				var tickets = _operations.GetEventTickets(eventId, page, pageSize);
+				var tickets = _operations.GetEventTickets(eventId, ticketStatus, page, pageSize);
 				return Ok(tickets);
 			}
 			catch (Exception ex) {

@@ -6,7 +6,7 @@ namespace TicketManagementTests {
 	public sealed class EventTests : TestBase {
 		[TestInitialize]
 		public void TestInitialize() {
-			base.CreateVenue();
+			base.CreateOperationsAndVenue();
 		}
 
 		[TestMethod]
@@ -77,6 +77,39 @@ namespace TicketManagementTests {
 			};
 			var updatedResult = _operations.UpdateTicketType(createdEvent.Id, createdTicketType.Id, updatedTicketType);
 			Assert.AreEqual(updatedTicketType, updatedResult);
+			var allTickets = _operations.GetEventTickets(createdEvent.Id, default, default, default);
+			Assert.AreEqual(3, allTickets.Count());
+		}
+
+		[TestMethod]
+		public void BasicTicketGetAvailable() {
+			var createdEvent = CreateEvent(addTicketType: true);
+			var tickets = _operations.GetEventTickets(createdEvent.Id, default, default, default);
+
+			Assert.IsNotNull(tickets);
+			Assert.IsTrue(tickets.Count() == 2, "Expected tickets to be created for the event.");
+			var ticketType = _operations.GetEventTicketTypes(createdEvent.Id).First();
+			var availableTickets = tickets.Where(t => t.TicketTypeId == ticketType.Id && t.Status == TicketStatus.Available).ToList();
+			Assert.IsTrue(availableTickets.Count == 2, "Expected two available tickets for the VIP ticket type.");
+		}
+
+		[TestMethod]
+		public void HappyPathEndToEnd() {
+			TicketTypeUpdate();
+			var foundEvent = _operations.GetEvents(default, default).FirstOrDefault();
+			var availableTickets = _operations.GetEventTickets(foundEvent.Id, TicketStatus.Available, default, default);
+			var ticketsAvailable = availableTickets.Count();
+			var availableTicket = availableTickets.FirstOrDefault();
+			var user = Guid.NewGuid();
+			var reservation = _operations.CreateTicketReservation(availableTicket.Id, new TicketReservation { UserId = user });
+			var retrievedReservation = _operations.GetTicketReservation(availableTicket.Id, user);
+			Assert.IsNotNull(retrievedReservation, "Reservation should be created successfully.");
+			var purchase = _operations.CreateTicketPurchase(availableTicket.Id, user, Guid.NewGuid().ToString(), 120.00m);
+			Assert.IsNotNull(purchase, "Purchase should be created successfully.");
+			var retrievedPurchase = _operations.GetTicketPurchase(availableTicket.Id);
+			Assert.IsNotNull(retrievedPurchase, "Purchase should be retrievable.");
+			availableTickets = _operations.GetEventTickets(foundEvent.Id, TicketStatus.Available, default, default);
+			Assert.AreEqual(ticketsAvailable - 1, availableTickets.Count(), "One ticket should be purchased, reducing the available count.");
 		}
 	}
 }

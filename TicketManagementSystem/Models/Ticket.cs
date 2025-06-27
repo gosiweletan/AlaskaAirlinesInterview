@@ -38,6 +38,7 @@ namespace TicketManagementSystem.Models {
 	}
 
 	public enum TicketStatus {
+		Unknown,
 		Available,
 		Reserved,
 		Purchased

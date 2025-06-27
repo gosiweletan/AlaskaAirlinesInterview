@@ -9,7 +9,7 @@ namespace TicketManagementTests {
 		/// <summary>
 		/// Initializes the test environment by creating a venue.
 		/// </summary>
-		protected void CreateVenue() {
+		protected void CreateOperationsAndVenue() {
 			_operations = new Operations();
 			var newVenue = new Venue { Name = "MiniStadium", Seats = ["A1", "A2", "B1", "B2"] };
 			var createdVenue = _operations.CreateVenue(newVenue);

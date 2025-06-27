@@ -19,8 +19,43 @@ namespace TicketManagementSystem.DataAccessLayer {
 			return newVenue;
 		}
 
-		public Venue GetVenue(Guid id) {
-			return Venues[id];
+		internal IEnumerable<Venue> GetVenues(int pageNumber, int pageSize) {
+			if (pageSize <= 0) {
+				throw new ArgumentOutOfRangeException(nameof(pageSize), "Page size must be greater than zero.");
+			}
+
+			if (pageSize > MaxPageSize) {
+				throw new ArgumentOutOfRangeException(nameof(pageSize), $"Page size cannot exceed {MaxPageSize}.");
+			}
+
+			if (pageNumber <= 0) {
+				throw new ArgumentOutOfRangeException(nameof(pageNumber), "Page number must be greater than zero.");
+			}
+
+			var totalVenues = Venues.Count;
+			var totalPages = (int)Math.Ceiling((double)totalVenues / pageSize);
+			if (pageNumber > totalPages) {
+				throw new ArgumentOutOfRangeException(nameof(pageNumber), $"Page number is out of range. {totalPages} pages of size {pageSize} exist.");
+			}
+
+			return Venues.Values.Skip((pageNumber - 1) * pageSize).Take(pageSize);
+		}
+
+		public Venue? GetVenue(Guid venueId) {
+			if (Venues.TryGetValue(venueId, out Venue? foundVenue)) {
+				return foundVenue;
+			}
+
+			return null;
+		}
+
+		internal Venue? UpdateVenue(Venue updatedVenue) {
+			if(!Venues.ContainsKey(updatedVenue.Id)) {
+				return null;
+			}
+
+			Venues[updatedVenue.Id] = updatedVenue;
+			return updatedVenue;
 		}
 
 		public Event CreateEvent(Event newEvent) {
@@ -95,7 +130,7 @@ namespace TicketManagementSystem.DataAccessLayer {
 			}
 		}
 
-		internal IEnumerable<Ticket> GetEventTickets(Guid eventId, int pageNumber, int pageSize) {
+		internal IEnumerable<Ticket> GetEventTickets(Guid eventId, TicketStatus ticketStatus, int pageNumber, int pageSize) {
 			if (pageSize <= 0) {
 				throw new ArgumentOutOfRangeException(nameof(pageSize), "Page size must be greater than zero.");
 			}
@@ -108,14 +143,16 @@ namespace TicketManagementSystem.DataAccessLayer {
 				throw new ArgumentOutOfRangeException(nameof(pageNumber), "Page number must be greater than zero.");
 			}
 
-			var tickets = Tickets[eventId];
-			var totalTickets = tickets.Count;
+			var tickets = ticketStatus == TicketStatus.Unknown 
+				? Tickets[eventId].Values
+				: Tickets[eventId].Values.Where(ticket => ticket.Status == ticketStatus);
+			var totalTickets = tickets.Count();
 			var totalPages = (int)Math.Ceiling((double)totalTickets / pageSize);
 			if (pageNumber > totalPages) {
 				throw new ArgumentOutOfRangeException(nameof(pageNumber), $"Page number is out of range. {totalPages} pages of size {pageSize} exist.");
 			}
 
-			return tickets.Values.Skip((pageNumber - 1) * pageSize).Take(pageSize);
+			return tickets.Skip((pageNumber - 1) * pageSize).Take(pageSize);
 		}
 
 		internal TicketType GetEventTicketType(Guid eventId, Guid ticketTypeId) {
@@ -146,21 +183,20 @@ namespace TicketManagementSystem.DataAccessLayer {
 			return ticket;
 		}
 
-		internal Ticket GetTicket(Guid ticketId) {
-			var ticket = Tickets.Values.SelectMany(t => t.Values).FirstOrDefault(t => t.Id == ticketId);
-			if (ticket == null) {
-				throw new InvalidOperationException($"Ticket id {ticketId} not found.");
-			}
-
-			return ticket;
+		internal Ticket? GetTicket(Guid ticketId) {
+			return Tickets.Values.SelectMany(t => t.Values).FirstOrDefault(t => t.Id == ticketId);
 		}
 
-		internal TicketReservation ReserveTicket(Guid ticketId, TicketReservation ticketReservation) {
+		internal TicketReservation? ReserveTicket(Guid ticketId, TicketReservation ticketReservation) {
 			if (ticketReservation.UserId == Guid.Empty) {
 				throw new ArgumentException("UserId is required.", nameof(ticketReservation));
 			}
 
 			var ticket = GetTicket(ticketId);
+			if (ticket == null) {
+				return null;
+			}
+
 			if (ticket.Status != TicketStatus.Available) {
 				throw new InvalidOperationException($"Ticket id {ticketId} is not available for reservation because its status is already {ticket.Status}.");
 			}
@@ -178,15 +214,15 @@ namespace TicketManagementSystem.DataAccessLayer {
 		/// </summary>
 		internal void DeleteTicketReservation(Guid ticketId, Guid userId) {
 			var ticket = GetTicket(ticketId);
-			if (ticket.Status == TicketStatus.Reserved && ticket.Owner == userId) {
-				// note: do not delete the owner to avoid a race condition where the ticket gets purchased as the cancellation call is being executed
+			if (ticket != null && ticket.Status == TicketStatus.Reserved && ticket.Owner == userId) {
+				ticket.Owner = null;
 				ticket.ReservedUntil = null;
 			}
 		}
 
 		internal TicketReservation? GetTicketReservation(Guid ticketId, Guid userId) {
 			var ticket = GetTicket(ticketId);
-			if (ticket.Status != TicketStatus.Reserved || ticket.Owner != userId) {
+			if (ticket == null || ticket.Status != TicketStatus.Reserved || ticket.Owner != userId) {
 				// No reservation found.
 				return null;
 			}
@@ -204,7 +240,7 @@ namespace TicketManagementSystem.DataAccessLayer {
 			// If the user has already purchased the ticket, behave idempotently. Deliberately ignoring the purchase token and price since the important fact is that the ticket is purchased.
 			if (ticket.Status == TicketStatus.Purchased && ticket.Owner == purchaser) {
 				return new TicketPurchase {
-					UserId = purchaser,
+					PurchaserId = purchaser,
 					PurchaseToken = ticket.PurchaseToken,
 					PurchasePrice = ticket.PurchasePrice.Value
 				};
@@ -223,13 +259,14 @@ namespace TicketManagementSystem.DataAccessLayer {
 				throw new InvalidOperationException($"Ticket id {ticketId} cannot be purchased for {purchasePrice:C} because the actual price is {ticketType.Price:C}.");
 			}
 
-			// TODO: Use payment processing system to process the payment.
+			//// TODO: Use payment processing system to process the payment.
 
+			ticket.Owner = purchaser;
 			ticket.PurchaseToken = purchaseToken;
 			ticket.PurchasePrice = purchasePrice;
 
 			return new TicketPurchase {
-				UserId = purchaser,
+				PurchaserId = purchaser,
 				PurchaseToken = purchaseToken,
 				PurchasePrice = purchasePrice
 			};
@@ -237,16 +274,38 @@ namespace TicketManagementSystem.DataAccessLayer {
 
 		internal TicketPurchase? GetTicketPurchase(Guid ticketId) {
 			var ticket = GetTicket(ticketId);
-			if (ticket.Status != TicketStatus.Purchased) {
-				// No purchase found.
+			if (ticket == null || ticket.Status != TicketStatus.Purchased) {
+				// Not found.
 				return null;
 			}
 
 			return new TicketPurchase {
-				UserId = ticket.Owner.Value,
+				PurchaserId = ticket.Owner.Value,
 				PurchaseToken = ticket.PurchaseToken,
 				PurchasePrice = ticket.PurchasePrice.Value
 			};
+		}
+
+		internal IEnumerable<Event> GetEvents(int pageNumber, int pageSize) {
+			if (pageSize <= 0) {
+				throw new ArgumentOutOfRangeException(nameof(pageSize), "Page size must be greater than zero.");
+			}
+
+			if (pageSize > MaxPageSize) {
+				throw new ArgumentOutOfRangeException(nameof(pageSize), $"Page size cannot exceed {MaxPageSize}.");
+			}
+
+			if (pageNumber <= 0) {
+				throw new ArgumentOutOfRangeException(nameof(pageNumber), "Page number must be greater than zero.");
+			}
+
+			var totalEvents = Events.Count;
+			var totalPages = (int)Math.Ceiling((double)totalEvents / pageSize);
+			if (pageNumber > totalPages) {
+				throw new ArgumentOutOfRangeException(nameof(pageNumber), $"Page number is out of range. {totalPages} pages of size {pageSize} exist.");
+			}
+
+			return Events.Values.Skip((pageNumber - 1) * pageSize).Take(pageSize);
 		}
 	}
 }

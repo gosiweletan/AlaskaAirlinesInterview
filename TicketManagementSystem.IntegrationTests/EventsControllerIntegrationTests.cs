@@ -34,8 +34,8 @@ namespace TicketManagementSystem.IntegrationTests
             _client = _factory.CreateClient();
             _jsonOptions = new JsonSerializerOptions
             {
-				PropertyNameCaseInsensitive = true
-			};
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
         }
 
         [Fact]
@@ -295,6 +295,476 @@ namespace TicketManagementSystem.IntegrationTests
 
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task CreateTicketType_WithValidData_ReturnsCreated()
+        {
+            // Arrange
+            var newEvent = new Event
+            {
+                Name = "Event for Ticket Types",
+                Description = "Event to test ticket type creation",
+                VenueId = Guid.NewGuid(),
+                EventStart = DateTime.UtcNow.AddDays(30),
+                EventEnd = DateTime.UtcNow.AddDays(30).AddHours(3),
+                ForSaleStart = DateTime.UtcNow.AddDays(1),
+                ForSaleEnd = DateTime.UtcNow.AddDays(29)
+            };
+
+            // Create an event first
+            var createEventJson = JsonSerializer.Serialize(newEvent, _jsonOptions);
+            var createEventContent = new StringContent(createEventJson, Encoding.UTF8, "application/json");
+            var createEventResponse = await _client.PostAsync("/events", createEventContent);
+            Assert.Equal(HttpStatusCode.Created, createEventResponse.StatusCode);
+
+            var eventLocation = createEventResponse.Headers.Location?.ToString();
+            var eventId = eventLocation?.Split('/').Last();
+
+            var newTicketType = new TicketType
+            {
+                Name = "VIP Ticket",
+                Price = 150.00m,
+                Seats = ["A1", "A2", "A3"]
+            };
+
+            var json = JsonSerializer.Serialize(newTicketType, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            // Act
+            var response = await _client.PostAsync($"/events/{eventId}/tickettypes", content);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+            Assert.NotNull(response.Headers.Location);
+            Assert.Contains($"/events/{eventId}/tickettypes/", response.Headers.Location.ToString());
+        }
+
+        [Fact]
+        public async Task CreateTicketType_WithInvalidEventId_ReturnsBadRequest()
+        {
+            // Arrange
+            var invalidEventId = Guid.NewGuid();
+            var newTicketType = new TicketType
+            {
+                Name = "VIP Ticket",
+                Price = 150.00m,
+                Seats = ["A1", "A2", "A3"]
+            };
+
+            var json = JsonSerializer.Serialize(newTicketType, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            // Act
+            var response = await _client.PostAsync($"/events/{invalidEventId}/tickettypes", content);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetTicketTypes_WithValidEventId_ReturnsTicketTypes()
+        {
+            // Arrange
+            var newEvent = new Event
+            {
+                Name = "Event for Ticket Types",
+                Description = "Event to test ticket type retrieval",
+                VenueId = Guid.NewGuid(),
+                EventStart = DateTime.UtcNow.AddDays(30),
+                EventEnd = DateTime.UtcNow.AddDays(30).AddHours(3),
+                ForSaleStart = DateTime.UtcNow.AddDays(1),
+                ForSaleEnd = DateTime.UtcNow.AddDays(29)
+            };
+
+            // Create an event first
+            var createEventJson = JsonSerializer.Serialize(newEvent, _jsonOptions);
+            var createEventContent = new StringContent(createEventJson, Encoding.UTF8, "application/json");
+            var createEventResponse = await _client.PostAsync("/events", createEventContent);
+            Assert.Equal(HttpStatusCode.Created, createEventResponse.StatusCode);
+
+            var eventLocation = createEventResponse.Headers.Location?.ToString();
+            var eventId = eventLocation?.Split('/').Last();
+
+            // Create a ticket type
+            var newTicketType = new TicketType
+            {
+                Name = "VIP Ticket",
+                Price = 150.00m,
+                Seats = ["A1", "A2", "A3"]
+            };
+
+            var createTicketTypeJson = JsonSerializer.Serialize(newTicketType, _jsonOptions);
+            var createTicketTypeContent = new StringContent(createTicketTypeJson, Encoding.UTF8, "application/json");
+            await _client.PostAsync($"/events/{eventId}/tickettypes", createTicketTypeContent);
+
+            // Act
+            var response = await _client.GetAsync($"/events/{eventId}/tickettypes");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var ticketTypes = JsonSerializer.Deserialize<List<TicketType>>(responseContent, _jsonOptions);
+            
+            Assert.NotNull(ticketTypes);
+            Assert.NotEmpty(ticketTypes);
+        }
+
+        [Fact]
+        public async Task GetTicketTypes_WithInvalidEventId_ReturnsNotFound()
+        {
+            // Arrange
+            var invalidEventId = Guid.NewGuid();
+
+            // Act
+            var response = await _client.GetAsync($"/events/{invalidEventId}/tickettypes");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetTicketType_WithValidIds_ReturnsTicketType()
+        {
+            // Arrange
+            var newEvent = new Event
+            {
+                Name = "Event for Ticket Type",
+                Description = "Event to test single ticket type retrieval",
+                VenueId = Guid.NewGuid(),
+                EventStart = DateTime.UtcNow.AddDays(30),
+                EventEnd = DateTime.UtcNow.AddDays(30).AddHours(3),
+                ForSaleStart = DateTime.UtcNow.AddDays(1),
+                ForSaleEnd = DateTime.UtcNow.AddDays(29)
+            };
+
+            // Create an event first
+            var createEventJson = JsonSerializer.Serialize(newEvent, _jsonOptions);
+            var createEventContent = new StringContent(createEventJson, Encoding.UTF8, "application/json");
+            var createEventResponse = await _client.PostAsync("/events", createEventContent);
+            Assert.Equal(HttpStatusCode.Created, createEventResponse.StatusCode);
+
+            var eventLocation = createEventResponse.Headers.Location?.ToString();
+            var eventId = eventLocation?.Split('/').Last();
+
+            // Create a ticket type
+            var newTicketType = new TicketType
+            {
+                Name = "VIP Ticket",
+                Price = 150.00m,
+                Seats = ["A1", "A2", "A3"]
+            };
+
+            var createTicketTypeJson = JsonSerializer.Serialize(newTicketType, _jsonOptions);
+            var createTicketTypeContent = new StringContent(createTicketTypeJson, Encoding.UTF8, "application/json");
+            var createTicketTypeResponse = await _client.PostAsync($"/events/{eventId}/tickettypes", createTicketTypeContent);
+            Assert.Equal(HttpStatusCode.Created, createTicketTypeResponse.StatusCode);
+
+            var ticketTypeLocation = createTicketTypeResponse.Headers.Location?.ToString();
+            var ticketTypeId = ticketTypeLocation?.Split('/').Last();
+
+            // Act
+            var response = await _client.GetAsync($"/events/{eventId}/tickettypes/{ticketTypeId}");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var ticketType = JsonSerializer.Deserialize<TicketType>(responseContent, _jsonOptions);
+            
+            Assert.NotNull(ticketType);
+            Assert.Equal(newTicketType.Name, ticketType.Name);
+            Assert.Equal(newTicketType.Price, ticketType.Price);
+        }
+
+        [Fact]
+        public async Task GetTicketType_WithInvalidIds_ReturnsNotFound()
+        {
+            // Arrange
+            var invalidEventId = Guid.NewGuid();
+            var invalidTicketTypeId = Guid.NewGuid();
+
+            // Act
+            var response = await _client.GetAsync($"/events/{invalidEventId}/tickettypes/{invalidTicketTypeId}");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task UpdateTicketType_WithValidData_ReturnsUpdatedTicketType()
+        {
+            // Arrange
+            var newEvent = new Event
+            {
+                Name = "Event for Ticket Type Update",
+                Description = "Event to test ticket type update",
+                VenueId = Guid.NewGuid(),
+                EventStart = DateTime.UtcNow.AddDays(30),
+                EventEnd = DateTime.UtcNow.AddDays(30).AddHours(3),
+                ForSaleStart = DateTime.UtcNow.AddDays(1),
+                ForSaleEnd = DateTime.UtcNow.AddDays(29)
+            };
+
+            // Create an event first
+            var createEventJson = JsonSerializer.Serialize(newEvent, _jsonOptions);
+            var createEventContent = new StringContent(createEventJson, Encoding.UTF8, "application/json");
+            var createEventResponse = await _client.PostAsync("/events", createEventContent);
+            Assert.Equal(HttpStatusCode.Created, createEventResponse.StatusCode);
+
+            var eventLocation = createEventResponse.Headers.Location?.ToString();
+            var eventId = eventLocation?.Split('/').Last();
+
+            // Create a ticket type
+            var originalTicketType = new TicketType
+            {
+                Name = "VIP Ticket",
+                Price = 150.00m,
+                Seats = ["A1", "A2", "A3"]
+            };
+
+            var createTicketTypeJson = JsonSerializer.Serialize(originalTicketType, _jsonOptions);
+            var createTicketTypeContent = new StringContent(createTicketTypeJson, Encoding.UTF8, "application/json");
+            var createTicketTypeResponse = await _client.PostAsync($"/events/{eventId}/tickettypes", createTicketTypeContent);
+            Assert.Equal(HttpStatusCode.Created, createTicketTypeResponse.StatusCode);
+
+            var ticketTypeLocation = createTicketTypeResponse.Headers.Location?.ToString();
+            var ticketTypeId = ticketTypeLocation?.Split('/').Last();
+
+            // Prepare updated ticket type
+            var updatedTicketType = new TicketType
+            {
+                Name = "Premium VIP Ticket",
+                Price = 200.00m,
+                Seats = ["A1", "A2", "A3", "A4"]
+            };
+
+            var updateJson = JsonSerializer.Serialize(updatedTicketType, _jsonOptions);
+            var updateContent = new StringContent(updateJson, Encoding.UTF8, "application/json");
+
+            // Act
+            var response = await _client.PutAsync($"/events/{eventId}/tickettypes/{ticketTypeId}", updateContent);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var resultTicketType = JsonSerializer.Deserialize<TicketType>(responseContent, _jsonOptions);
+            
+            Assert.NotNull(resultTicketType);
+            Assert.Equal(updatedTicketType.Name, resultTicketType.Name);
+            Assert.Equal(updatedTicketType.Price, resultTicketType.Price);
+            Assert.Equal(Guid.Parse(ticketTypeId!), resultTicketType.Id);
+        }
+
+        [Fact]
+        public async Task UpdateTicketType_WithInvalidIds_ReturnsBadRequest()
+        {
+            // Arrange
+            var invalidEventId = Guid.NewGuid();
+            var invalidTicketTypeId = Guid.NewGuid();
+            var updatedTicketType = new TicketType
+            {
+                Name = "Premium VIP Ticket",
+                Price = 200.00m,
+                Seats = ["A1", "A2", "A3", "A4"]
+            };
+
+            var updateJson = JsonSerializer.Serialize(updatedTicketType, _jsonOptions);
+            var updateContent = new StringContent(updateJson, Encoding.UTF8, "application/json");
+
+            // Act
+            var response = await _client.PutAsync($"/events/{invalidEventId}/tickettypes/{invalidTicketTypeId}", updateContent);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetEventTickets_WithValidEventId_ReturnsTickets()
+        {
+            // Arrange
+            var newEvent = new Event
+            {
+                Name = "Event for Tickets",
+                Description = "Event to test ticket retrieval",
+                VenueId = Guid.NewGuid(),
+                EventStart = DateTime.UtcNow.AddDays(30),
+                EventEnd = DateTime.UtcNow.AddDays(30).AddHours(3),
+                ForSaleStart = DateTime.UtcNow.AddDays(1),
+                ForSaleEnd = DateTime.UtcNow.AddDays(29)
+            };
+
+            // Create an event first
+            var createEventJson = JsonSerializer.Serialize(newEvent, _jsonOptions);
+            var createEventContent = new StringContent(createEventJson, Encoding.UTF8, "application/json");
+            var createEventResponse = await _client.PostAsync("/events", createEventContent);
+            Assert.Equal(HttpStatusCode.Created, createEventResponse.StatusCode);
+
+            var eventLocation = createEventResponse.Headers.Location?.ToString();
+            var eventId = eventLocation?.Split('/').Last();
+
+            // Act
+            var response = await _client.GetAsync($"/events/{eventId}/tickets?page=1&pageSize=10");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var tickets = JsonSerializer.Deserialize<List<object>>(responseContent, _jsonOptions);
+            
+            Assert.NotNull(tickets);
+        }
+
+        [Fact]
+        public async Task GetEventTickets_WithInvalidEventId_ReturnsBadRequest()
+        {
+            // Arrange
+            var invalidEventId = Guid.NewGuid();
+
+            // Act
+            var response = await _client.GetAsync($"/events/{invalidEventId}/tickets?page=1&pageSize=10");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetEventTickets_Paging_WorksCorrectly()
+        {
+            // Arrange
+            var newEvent = new Event
+            {
+                Name = "Paging Test Event",
+                Description = "Event for paging test",
+                VenueId = Guid.NewGuid(),
+                EventStart = DateTime.UtcNow.AddDays(10),
+                EventEnd = DateTime.UtcNow.AddDays(10).AddHours(2),
+                ForSaleStart = DateTime.UtcNow.AddDays(1),
+                ForSaleEnd = DateTime.UtcNow.AddDays(9)
+            };
+            var eventJson = JsonSerializer.Serialize(newEvent, _jsonOptions);
+            var eventContent = new StringContent(eventJson, Encoding.UTF8, "application/json");
+            var eventResponse = await _client.PostAsync("/events", eventContent);
+            eventResponse.EnsureSuccessStatusCode();
+            var eventId = eventResponse.Headers.Location!.ToString().Split('/').Last();
+
+            // Create ticket type with 10 seats
+            var ticketType = new TicketType
+            {
+                Name = "PagingType",
+                Price = 20.00m,
+                Seats = Enumerable.Range(1, 10).Select(i => $"A{i}").ToArray()
+            };
+            var ticketTypeJson = JsonSerializer.Serialize(ticketType, _jsonOptions);
+            var ticketTypeContent = new StringContent(ticketTypeJson, Encoding.UTF8, "application/json");
+            var ticketTypeResponse = await _client.PostAsync($"/events/{eventId}/tickettypes", ticketTypeContent);
+            ticketTypeResponse.EnsureSuccessStatusCode();
+
+            // Act - Page 1
+            var page1Response = await _client.GetAsync($"/events/{eventId}/tickets?page=1&pageSize=5");
+            Assert.Equal(HttpStatusCode.OK, page1Response.StatusCode);
+            var page1Content = await page1Response.Content.ReadAsStringAsync();
+            var page1Tickets = JsonSerializer.Deserialize<List<Ticket>>(page1Content, _jsonOptions);
+            Assert.NotNull(page1Tickets);
+            Assert.Equal(5, page1Tickets.Count);
+
+            // Act - Page 2
+            var page2Response = await _client.GetAsync($"/events/{eventId}/tickets?page=2&pageSize=5");
+            Assert.Equal(HttpStatusCode.OK, page2Response.StatusCode);
+            var page2Content = await page2Response.Content.ReadAsStringAsync();
+            var page2Tickets = JsonSerializer.Deserialize<List<Ticket>>(page2Content, _jsonOptions);
+            Assert.NotNull(page2Tickets);
+            Assert.Equal(5, page2Tickets.Count);
+
+            // Assert - No overlap between pages
+            var page1Ids = page1Tickets.Select(t => t.Id).ToHashSet();
+            var page2Ids = page2Tickets.Select(t => t.Id).ToHashSet();
+            Assert.Empty(page1Ids.Intersect(page2Ids));
+
+            // Assert - All seats are present across both pages
+            var allSeats = page1Tickets.Concat(page2Tickets).Select(t => t.Seat).OrderBy(s => s).ToArray();
+            var expectedSeats = Enumerable.Range(1, 10).Select(i => $"A{i}").OrderBy(s => s).ToArray();
+            Assert.Equal(expectedSeats, allSeats);
+        }
+
+        [Fact]
+        public async Task GetEventTickets_FilterByStatus_AvailableOnly()
+        {
+            // Arrange
+            var newEvent = new Event
+            {
+                Name = "Status Filter Event",
+                Description = "Event for status filter test",
+                VenueId = Guid.NewGuid(),
+                EventStart = DateTime.UtcNow.AddDays(10),
+                EventEnd = DateTime.UtcNow.AddDays(10).AddHours(2),
+                ForSaleStart = DateTime.UtcNow.AddDays(1),
+                ForSaleEnd = DateTime.UtcNow.AddDays(9)
+            };
+            var eventJson = JsonSerializer.Serialize(newEvent, _jsonOptions);
+            var eventContent = new StringContent(eventJson, Encoding.UTF8, "application/json");
+            var eventResponse = await _client.PostAsync("/events", eventContent);
+            eventResponse.EnsureSuccessStatusCode();
+            var eventId = eventResponse.Headers.Location!.ToString().Split('/').Last();
+
+            // Create ticket type with 6 seats
+            var ticketType = new TicketType
+            {
+                Name = "StatusType",
+                Price = 30.00m,
+                Seats = Enumerable.Range(1, 6).Select(i => $"A{i}").ToArray()
+            };
+            var ticketTypeJson = JsonSerializer.Serialize(ticketType, _jsonOptions);
+            var ticketTypeContent = new StringContent(ticketTypeJson, Encoding.UTF8, "application/json");
+            var ticketTypeResponse = await _client.PostAsync($"/events/{eventId}/tickettypes", ticketTypeContent);
+            ticketTypeResponse.EnsureSuccessStatusCode();
+
+            // Get all tickets
+            var ticketsResponse = await _client.GetAsync($"/events/{eventId}/tickets?page=1&pageSize=10");
+            ticketsResponse.EnsureSuccessStatusCode();
+            var ticketsContent = await ticketsResponse.Content.ReadAsStringAsync();
+            var tickets = JsonSerializer.Deserialize<List<Ticket>>(ticketsContent, _jsonOptions)!;
+            Assert.Equal(6, tickets.Count);
+
+            // Purchase 2 tickets
+            for (int i = 0; i < 2; i++)
+            {
+                var purchase = new TicketPurchase
+                {
+                    PurchaserId = Guid.NewGuid(),
+                    PurchaseToken = $"token-{i}",
+                    PurchasePrice = 30.00m
+                };
+                var purchaseJson = JsonSerializer.Serialize(purchase, _jsonOptions);
+                var purchaseContent = new StringContent(purchaseJson, Encoding.UTF8, "application/json");
+                var purchaseResponse = await _client.PostAsync($"/tickets/{tickets[i].Id}/purchase", purchaseContent);
+                Assert.Equal(HttpStatusCode.Created, purchaseResponse.StatusCode);
+            }
+
+            // Reserve 2 tickets
+            for (int i = 2; i < 4; i++)
+            {
+                var reservation = new TicketReservation { UserId = Guid.NewGuid() };
+                var reservationJson = JsonSerializer.Serialize(reservation, _jsonOptions);
+                var reservationContent = new StringContent(reservationJson, Encoding.UTF8, "application/json");
+                var reservationResponse = await _client.PostAsync($"/tickets/{tickets[i].Id}/reservations", reservationContent);
+                Assert.Equal(HttpStatusCode.Created, reservationResponse.StatusCode);
+            }
+
+            // Act: Get only available tickets
+            var availableResponse = await _client.GetAsync($"/events/{eventId}/tickets?ticketStatus=Available&page=1&pageSize=10");
+            Assert.Equal(HttpStatusCode.OK, availableResponse.StatusCode);
+            var availableContent = await availableResponse.Content.ReadAsStringAsync();
+            var availableTickets = JsonSerializer.Deserialize<List<Ticket>>(availableContent, _jsonOptions)!;
+
+            // Assert: Only the last 2 tickets are available
+            Assert.Equal(2, availableTickets.Count);
+            var availableIds = availableTickets.Select(t => t.Id).ToHashSet();
+            Assert.Contains(tickets[4].Id, availableIds);
+            Assert.Contains(tickets[5].Id, availableIds);
+            Assert.All(availableTickets, t => Assert.Equal(TicketStatus.Available, t.Status));
         }
 
         [Fact]

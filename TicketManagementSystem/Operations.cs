@@ -5,16 +5,18 @@ using System.Numerics;
 namespace TicketManagementSystem {
 	public class Operations {
 		private readonly DataAccess _dataAccess = new();
-
 		public int DefaultPageSize { get; set; } = 10;
-
 
 		public Venue CreateVenue(Venue newVenue) {
 			return _dataAccess.CreateVenue(newVenue);
 		}
 
-		public Venue GetVenue(Guid id) {
+		public Venue? GetVenue(Guid id) {
 			return _dataAccess.GetVenue(id);
+		}
+
+		public IEnumerable<Venue> GetVenues(int pageNumber, int pageSize) {
+			return _dataAccess.GetVenues(pageNumber == default ? 1 : pageNumber, pageSize == default ? DefaultPageSize : pageSize);
 		}
 
 		public Event CreateEvent(Event newEvent) {
@@ -23,6 +25,10 @@ namespace TicketManagementSystem {
 
 		public Event? GetEvent(Guid id) {
 			return _dataAccess.GetEvent(id);
+		}
+
+		public IEnumerable<Event> GetEvents(int pageNumber, int pageSize) {
+			return _dataAccess.GetEvents(pageNumber == default ? 1 : pageNumber, pageSize == default ? DefaultPageSize : pageSize);
 		}
 
 		public Event UpdateEvent(Guid eventId, Event updatedEvent) {
@@ -39,8 +45,12 @@ namespace TicketManagementSystem {
 			return _dataAccess.UpdateTicketType(eventId, updatedTicketType);
 		}
 
-		public IEnumerable<Ticket> GetEventTickets(Guid eventId, int pageNum, int pageSize) {
-			return _dataAccess.GetEventTickets(eventId, pageNum == default ? 1 : pageNum, pageSize == default ? DefaultPageSize : pageSize);
+		public IEnumerable<Ticket> GetEventTickets(Guid eventId, TicketStatus ticketStatus, int pageNum, int pageSize) {
+			if (string.IsNullOrEmpty(ticketStatus.ToString())) {
+				ticketStatus = TicketStatus.Unknown;
+			}
+
+			return _dataAccess.GetEventTickets(eventId, ticketStatus, pageNum == default ? 1 : pageNum, pageSize == default ? DefaultPageSize : pageSize);
 		}
 
 		public Ticket GetEventTicket(Guid eventId, Guid ticketId) {
@@ -59,7 +69,7 @@ namespace TicketManagementSystem {
 			return _dataAccess.GetEventTicketType(eventId, ticketTypeId);
 		}
 
-		public TicketReservation CreateTicketReservation(Guid ticketId, TicketReservation ticketReservation) {
+		public TicketReservation? CreateTicketReservation(Guid ticketId, TicketReservation ticketReservation) {
 			return _dataAccess.ReserveTicket(ticketId, ticketReservation);
 		}
 
@@ -77,6 +87,11 @@ namespace TicketManagementSystem {
 
 		public TicketPurchase? GetTicketPurchase(Guid ticketId) {
 			return _dataAccess.GetTicketPurchase(ticketId);
+		}
+
+		internal Venue? UpdateVenue(Guid venueId, Venue updatedVenue) {
+			updatedVenue.Id = venueId;
+			return _dataAccess.UpdateVenue(updatedVenue);
 		}
 	}
 }
