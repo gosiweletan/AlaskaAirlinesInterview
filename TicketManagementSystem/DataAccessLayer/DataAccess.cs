@@ -143,7 +143,6 @@ namespace TicketManagementSystem.DataAccessLayer {
 		private void CreateEventTicketsForSeats(Guid eventId, TicketType newTicketType) {
 			var availableSeats = Venues[Events[eventId].VenueId].Seats;
 			foreach (var seat in newTicketType.Seats) {
-				// TODO: Needs testing before release.
 				if (!availableSeats.Contains(seat)) {
 					throw new InvalidOperationException($"Seat {seat} is not available in the venue for event id {eventId}.");
 				}

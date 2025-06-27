@@ -1,6 +1,0 @@
-@TicketManagementSystem_HostAddress = http://localhost:5149
-
-GET {{TicketManagementSystem_HostAddress}}/venues/764083e8-8398-4254-a6c5-aec52926e4c3/
-Accept: application/json
-
-###
