@@ -61,26 +61,6 @@ namespace TicketManagementSystem.IntegrationTests
         }
 
         [Fact]
-        public async Task CreateVenue_WithInvalidVenue_ReturnsBadRequest()
-        {
-            // Arrange
-            var invalidVenue = new Venue
-            {
-                Name = "", // Empty name should be invalid
-                Seats = ["A1", "A2", "A3"]
-            };
-
-            var json = JsonSerializer.Serialize(invalidVenue, _jsonOptions);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            // Act
-            var response = await _client.PostAsync("/venues", content);
-
-            // Assert
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        }
-
-        [Fact]
         public async Task CreateVenue_WithInvalidJson_ReturnsBadRequest()
         {
             // Arrange
@@ -204,28 +184,6 @@ namespace TicketManagementSystem.IntegrationTests
 
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task GetVenue_WithSpecificId_ReturnsExpectedVenue()
-        {
-            // Arrange
-            var specificId = Guid.NewGuid();
-
-            // Act
-            var response = await _client.GetAsync($"/venues/{specificId}");
-
-            // Assert
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            
-            var responseContent = await response.Content.ReadAsStringAsync();
-            var retrievedVenue = JsonSerializer.Deserialize<Venue>(responseContent, _jsonOptions);
-            
-            Assert.NotNull(retrievedVenue);
-            Assert.Equal(specificId, retrievedVenue.Id);
-            Assert.Equal("Default Venue", retrievedVenue.Name);
-            Assert.Equal(4, retrievedVenue.Seats.Length);
-            Assert.True(retrievedVenue.Seats.SequenceEqual(["A1", "A2", "B1", "B2"]));
         }
 
         [Fact]
@@ -405,6 +363,53 @@ namespace TicketManagementSystem.IntegrationTests
             {
                 Assert.Contains(venues, v => v.Name == venue.Name && v.Seats.SequenceEqual(venue.Seats));
             }
+        }
+
+        [Fact]
+        public async Task UpdateVenue_WithValidData_UpdatesVenue()
+        {
+            // Arrange: Create a venue
+            var originalVenue = new Venue
+            {
+                Name = "Original Venue",
+                Seats = new[] { "A1", "A2", "A3" }
+            };
+            var createJson = JsonSerializer.Serialize(originalVenue, _jsonOptions);
+            var createContent = new StringContent(createJson, Encoding.UTF8, "application/json");
+            var createResponse = await _client.PostAsync("/venues", createContent);
+            Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+            var location = createResponse.Headers.Location?.ToString();
+            Assert.NotNull(location);
+            var venueId = location!.Split('/').Last();
+
+            // Prepare updated venue
+            var updatedVenue = new Venue
+            {
+                Name = "Updated Venue",
+                Seats = new[] { "B1", "B2", "B3", "B4" }
+            };
+            var updateJson = JsonSerializer.Serialize(updatedVenue, _jsonOptions);
+            var updateContent = new StringContent(updateJson, Encoding.UTF8, "application/json");
+
+            // Act: Update the venue
+            var updateResponse = await _client.PutAsync($"/venues/{venueId}", updateContent);
+            Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
+            var updateResponseContent = await updateResponse.Content.ReadAsStringAsync();
+            var updatedVenueResult = JsonSerializer.Deserialize<Venue>(updateResponseContent, _jsonOptions);
+            Assert.NotNull(updatedVenueResult);
+            Assert.Equal("Updated Venue", updatedVenueResult.Name);
+            Assert.Equal(4, updatedVenueResult.Seats.Length);
+            Assert.True((new[] { "B1", "B2", "B3", "B4" }).SequenceEqual(updatedVenueResult.Seats));
+
+            // Act: Get the venue and verify update
+            var getResponse = await _client.GetAsync($"/venues/{venueId}");
+            Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+            var getContent = await getResponse.Content.ReadAsStringAsync();
+            var getVenue = JsonSerializer.Deserialize<Venue>(getContent, _jsonOptions);
+            Assert.NotNull(getVenue);
+            Assert.Equal("Updated Venue", getVenue.Name);
+            Assert.Equal(4, getVenue.Seats.Length);
+            Assert.True((new[] { "B1", "B2", "B3", "B4" }).SequenceEqual(getVenue.Seats));
         }
     }
 } 

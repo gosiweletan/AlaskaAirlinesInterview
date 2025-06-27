@@ -11,12 +11,17 @@ namespace TicketManagementSystem {
 			return _dataAccess.CreateVenue(newVenue);
 		}
 
+		public IEnumerable<Venue> GetVenues(int pageNumber, int pageSize) {
+			return _dataAccess.GetVenues(pageNumber == default ? 1 : pageNumber, pageSize == default ? DefaultPageSize : pageSize);
+		}
+
 		public Venue? GetVenue(Guid id) {
 			return _dataAccess.GetVenue(id);
 		}
 
-		public IEnumerable<Venue> GetVenues(int pageNumber, int pageSize) {
-			return _dataAccess.GetVenues(pageNumber == default ? 1 : pageNumber, pageSize == default ? DefaultPageSize : pageSize);
+		public Venue? UpdateVenue(Guid venueId, Venue updatedVenue) {
+			updatedVenue.Id = venueId;
+			return _dataAccess.UpdateVenue(updatedVenue);
 		}
 
 		public Event CreateEvent(Event newEvent) {
@@ -87,11 +92,6 @@ namespace TicketManagementSystem {
 
 		public TicketPurchase? GetTicketPurchase(Guid ticketId) {
 			return _dataAccess.GetTicketPurchase(ticketId);
-		}
-
-		internal Venue? UpdateVenue(Guid venueId, Venue updatedVenue) {
-			updatedVenue.Id = venueId;
-			return _dataAccess.UpdateVenue(updatedVenue);
 		}
 	}
 }

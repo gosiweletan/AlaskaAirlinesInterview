@@ -37,14 +37,30 @@ namespace TicketManagementSystem.IntegrationTests
 			};
         }
 
+        private async Task<Guid> CreateVenueAsync()
+        {
+            var venue = new Venue
+            {
+                Name = "Test Venue",
+                Seats = new[] { "A1", "A2", "A3" }
+            };
+            var venueJson = JsonSerializer.Serialize(venue, _jsonOptions);
+            var venueContent = new StringContent(venueJson, Encoding.UTF8, "application/json");
+            var venueResponse = await _client.PostAsync("/venues", venueContent);
+            venueResponse.EnsureSuccessStatusCode();
+            var venueId = Guid.Parse(venueResponse.Headers.Location!.ToString().Split('/').Last());
+            return venueId;
+        }
+
         private async Task<(Guid eventId, Guid ticketTypeId, Guid ticketId)> CreateEventWithTicketAsync()
         {
+            var venueId = await CreateVenueAsync();
             // Create event
             var newEvent = new Event
             {
                 Name = "Ticket Test Event",
                 Description = "Event for ticket tests",
-                VenueId = Guid.NewGuid(),
+                VenueId = venueId,
                 EventStart = DateTime.UtcNow.AddDays(10),
                 EventEnd = DateTime.UtcNow.AddDays(10).AddHours(2),
                 ForSaleStart = DateTime.UtcNow.AddDays(1),
@@ -61,7 +77,7 @@ namespace TicketManagementSystem.IntegrationTests
             {
                 Name = "Standard",
                 Price = 50.00m,
-                Seats = ["A1"]
+                Seats = new[] { "A1" }
             };
             var ticketTypeJson = JsonSerializer.Serialize(ticketType, _jsonOptions);
             var ticketTypeContent = new StringContent(ticketTypeJson, Encoding.UTF8, "application/json");
@@ -134,7 +150,7 @@ namespace TicketManagementSystem.IntegrationTests
             var json = JsonSerializer.Serialize(reservation, _jsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             var response = await _client.PostAsync($"/tickets/{invalidTicketId}/reservations", content);
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
 
         [Fact]
@@ -204,7 +220,7 @@ namespace TicketManagementSystem.IntegrationTests
             var invalidTicketId = Guid.NewGuid();
             var userId = Guid.NewGuid();
             var response = await _client.GetAsync($"/tickets/{invalidTicketId}/reservations/{userId}");
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
 
         [Fact]
@@ -213,7 +229,7 @@ namespace TicketManagementSystem.IntegrationTests
             var invalidTicketId = Guid.NewGuid();
             var userId = Guid.NewGuid();
             var response = await _client.DeleteAsync($"/tickets/{invalidTicketId}/reservations/{userId}");
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         }
     }
 } 

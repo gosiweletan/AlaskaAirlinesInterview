@@ -59,6 +59,18 @@ namespace TicketManagementSystem.DataAccessLayer {
 		}
 
 		public Event CreateEvent(Event newEvent) {
+			if (!Venues.ContainsKey(newEvent.VenueId)) {
+				throw new ArgumentException("A valid venueId is required.", nameof(newEvent));
+			}
+
+			if (newEvent.EventStart >= newEvent.EventEnd) {
+				throw new ArgumentException("Event start time must be before the end time.", nameof(newEvent));
+			}
+
+			if (newEvent.ForSaleStart >= newEvent.ForSaleEnd) {
+				throw new ArgumentException("For sale start time must be before the end time.", nameof(newEvent));
+			}
+
 			newEvent.Id = Guid.NewGuid();
 			Events.Add(newEvent.Id, newEvent);
 			TicketTypes[newEvent.Id] = [];
@@ -69,6 +81,18 @@ namespace TicketManagementSystem.DataAccessLayer {
 		internal Event UpdateEvent(Event updatedEvent) {
 			if (!Events.ContainsKey(updatedEvent.Id)) {
 				throw new InvalidOperationException($"Event with ID {updatedEvent.Id} not found.");
+			}
+
+			if (!Venues.ContainsKey(updatedEvent.VenueId)) {
+				throw new ArgumentException("A valid venueId is required.", nameof(updatedEvent));
+			}
+
+			if (updatedEvent.EventStart >= updatedEvent.EventEnd) {
+				throw new ArgumentException("Event start time must be before the end time.", nameof(updatedEvent));
+			}
+
+			if (updatedEvent.ForSaleStart >= updatedEvent.ForSaleEnd) {
+				throw new ArgumentException("For sale start time must be before the end time.", nameof(updatedEvent));
 			}
 
 			Events[updatedEvent.Id] = updatedEvent;
@@ -141,6 +165,14 @@ namespace TicketManagementSystem.DataAccessLayer {
 
 			if (pageNumber <= 0) {
 				throw new ArgumentOutOfRangeException(nameof(pageNumber), "Page number must be greater than zero.");
+			}
+
+			if (!Events.ContainsKey(eventId)) {
+				throw new InvalidOperationException($"Event id {eventId} not found.");
+			}
+
+			if (Tickets[eventId].Count == 0) {
+				return []; // No tickets for this event.
 			}
 
 			var tickets = ticketStatus == TicketStatus.Unknown 
